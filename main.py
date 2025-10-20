@@ -40,8 +40,9 @@ FLAGS = {
 }
 
 # ===== DB init + migrations =====
+DB_PATH = os.getenv("DATA_PATH", "data.db")
 def init_db():
-    conn = sqlite3.connect("data.db")
+    conn = sqlite3.connect(DB_PATH)
     with conn:
         conn.execute("""
         CREATE TABLE IF NOT EXISTS records (
@@ -104,7 +105,7 @@ def get_spend_sum(form, geo: str) -> int:
     return total
 
 def fetch_existing_map(user: str, sel_date: str, vertical: str):
-    conn = sqlite3.connect("data.db"); conn.row_factory = sqlite3.Row
+    conn = sqlite3.connect(DB_PATH); conn.row_factory = sqlite3.Row
     rows = conn.execute("""
         SELECT geo, spend, deps
         FROM records
@@ -114,7 +115,7 @@ def fetch_existing_map(user: str, sel_date: str, vertical: str):
     return {r["geo"]: {"spend": int(r["spend"] or 0), "deps": int(r["deps"] or 0)} for r in rows}
 
 def distinct_users():
-    conn = sqlite3.connect("data.db"); conn.row_factory = sqlite3.Row
+    conn = sqlite3.connect(DB_PATH); conn.row_factory = sqlite3.Row
     db_users = [r["user"] for r in conn.execute("SELECT DISTINCT user FROM records").fetchall()]
     conn.close()
     return sorted(set(ALLOWED_USERS).union(db_users))
@@ -156,7 +157,7 @@ def panel():
     existing_crash = fetch_existing_map(user, selected_date, "Crash")
 
     # последнее сохранение (UTC->MSK) по этому юзеру и дате
-    conn = sqlite3.connect("data.db"); conn.row_factory = sqlite3.Row
+    conn = sqlite3.connect(DB_PATH); conn.row_factory = sqlite3.Row
     row = conn.execute("""
         SELECT MAX(updated_at) AS last
         FROM records WHERE user=? AND date=?
@@ -194,7 +195,7 @@ def save():
         rows.append((user, selected_date, geo, vertical, spend, deps, revenue, profit, now_ts, now_ts))
 
     if rows:
-        conn = sqlite3.connect("data.db")
+        conn = sqlite3.connect(DB_PATH)
         with conn:
             conn.executemany("""
                 INSERT INTO records (user, date, geo, vertical, spend, deps, revenue, profit, created_at, updated_at)
@@ -240,7 +241,7 @@ def dashboard():
         where = "user=? AND " + where
         params = [view_user] + params
 
-    conn = sqlite3.connect("data.db"); conn.row_factory = sqlite3.Row
+    conn = sqlite3.connect(DB_PATH); conn.row_factory = sqlite3.Row
 
     # by vertical
     cur1 = conn.execute(f"""
