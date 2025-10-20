@@ -1,0 +1,11 @@
+[env]
+PORT = "8000"
+# (опц.) SECRET_KEY = "change_me"   # лучше задать в UI Deta Space как secret env
+
+[[micros]]
+name = "web"
+src = "."
+engine = "python3.11"
+primary = true
+[micros.run]
+cmd = "gunicorn -w 1 -k gthread -b 0.0.0.0:8000 main:app"
